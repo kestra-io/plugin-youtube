@@ -78,6 +78,10 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok"
     testCompileOnly 'org.projectlombok:lombok'
 
+    implementation "com.google.api-client:google-api-client"
+    implementation "com.google.oauth-client:google-oauth-client-jetty"
+    implementation "com.google.apis:google-api-services-youtube:v3-rev222-1.25.0"
+
     // micronaut
     testAnnotationProcessor "io.micronaut:micronaut-inject-java"
     testAnnotationProcessor "io.micronaut.validation:micronaut-validation-processor"
@@ -173,8 +177,8 @@ jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
-                "X-Kestra-Title": "Template",
-                "X-Kestra-Group": project.group + ".templates",
+                "X-Kestra-Title": "Youtube",
+                "X-Kestra-Group": project.group + ".youtube",
                 "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )
