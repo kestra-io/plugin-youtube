@@ -1,4 +1,4 @@
-package io.kestra.plugin.youtube.Triggers;
+package io.kestra.plugin.youtube;
 
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.Credential;
@@ -53,7 +53,7 @@ import java.util.Optional;
 
                 triggers:
                   - id: new_comment_trigger
-                    type: io.kestra.plugin.youtube.triggers.CommentTrigger
+                    type: io.kestra.plugin.youtube.CommentTrigger
                     accessToken: "{{ secret('YOUTUBE_ACCESS_TOKEN') }}"
                     videoIds:
                       - "dQw4w9WgXcQ"
@@ -66,7 +66,7 @@ import java.util.Optional;
             code = """
                 triggers:
                   - id: multi_video_comments
-                    type: io.kestra.plugin.youtube.triggers.CommentTrigger
+                    type: io.kestra.plugin.youtube.CommentTrigger
                     accessToken: "{{ secret('YOUTUBE_ACCESS_TOKEN') }}"
                     videoIds:
                       - "dQw4w9WgXcQ"

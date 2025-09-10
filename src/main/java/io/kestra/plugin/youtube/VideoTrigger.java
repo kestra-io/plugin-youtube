@@ -1,4 +1,4 @@
-package io.kestra.plugin.youtube.Triggers;
+package io.kestra.plugin.youtube;
 
 
 import com.google.api.client.auth.oauth2.BearerToken;
@@ -57,7 +57,7 @@ import java.util.Optional;
 
                 triggers:
                   - id: new_video_trigger
-                    type: io.kestra.plugin.youtube.triggers.VideoTrigger
+                    type: io.kestra.plugin.youtube.VideoTrigger
                     accessToken: "{{ secret('YOUTUBE_ACCESS_TOKEN') }}"
                     channelId: "UC_x5XG1OV2P6uZZ5FSM9Ttw"
                     interval: PT1H
