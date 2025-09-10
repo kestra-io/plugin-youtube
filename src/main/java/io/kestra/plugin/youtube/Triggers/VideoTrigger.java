@@ -48,7 +48,7 @@ import java.util.Optional;
 
                 tasks:
                   - id: notify_slack
-                    type: io.kestra.plugin.notifications.slack.SlackExecution
+                    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
                     url: "{{ secret('SLACK_WEBHOOK_URL') }}"
                     payload: |
                       {
@@ -57,7 +57,7 @@ import java.util.Optional;
 
                 triggers:
                   - id: new_video_trigger
-                    type: io.kestra.plugin.youtube.trigger.NewVideoTrigger
+                    type: io.kestra.plugin.youtube.triggers.VideoTrigger
                     accessToken: "{{ secret('YOUTUBE_ACCESS_TOKEN') }}"
                     channelId: "UC_x5XG1OV2P6uZZ5FSM9Ttw"
                     interval: PT1H
@@ -141,31 +141,26 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
                return Optional.empty();
             }
 
-            // Calculate last check time using next execution time
-            Instant lastCheckTime = calculateLastCheckTime(context);
+            Instant checkTime = Instant.now().minus(this.interval);
 
-            // Collect new videos
+            // Add a small buffer to account for delays in YouTube processing
+            checkTime = checkTime.minus(Duration.ofMinutes(5));
+
+            runContext.logger().info("Looking for videos published after: {}", checkTime);
+
             List<VideoData> newVideos = new ArrayList<>();
             for (PlaylistItem item : items) {
                 Instant publishedAt = Instant.ofEpochMilli(
                     item.getSnippet().getPublishedAt().getValue()
                 );
 
-                if (publishedAt.isAfter(lastCheckTime)) {
-                    VideoData videoData = VideoData.builder()
-                        .videoId(item.getSnippet().getResourceId().getVideoId())
-                        .title(item.getSnippet().getTitle())
-                        .description(item.getSnippet().getDescription())
-                        .channelId(item.getSnippet().getChannelId())
-                        .channelTitle(item.getSnippet().getChannelTitle())
-                        .publishedAt(publishedAt)
-                        .thumbnailUrl(item.getSnippet().getThumbnails() != null &&
-                            item.getSnippet().getThumbnails().getDefault() != null
-                        ? item.getSnippet().getThumbnails().getDefault().getUrl() : null)
-                        .videoUrl("https://www.youtube.com/watch?v=" + item.getSnippet().getResourceId().getVideoId())
-                        .build();
+                runContext.logger().debug("Video '{}' published at: {}",
+                    item.getSnippet().getTitle(), publishedAt);
 
+                if (publishedAt.isAfter(checkTime)) {
+                    VideoData videoData = createVideoData(item);
                     newVideos.add(videoData);
+                    runContext.logger().info("Found new video: {}", videoData.getTitle());
                 }
             }
 
@@ -286,6 +281,24 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
         @Schema(title = "All new videos found")
         private final List<VideoData> allNewVideos;
+    }
+    private VideoData createVideoData(PlaylistItem item) {
+        Instant publishedAt = Instant.ofEpochMilli(
+            item.getSnippet().getPublishedAt().getValue()
+        );
+
+        return VideoData.builder()
+            .videoId(item.getSnippet().getResourceId().getVideoId())
+            .title(item.getSnippet().getTitle())
+            .description(item.getSnippet().getDescription())
+            .channelId(item.getSnippet().getChannelId())
+            .channelTitle(item.getSnippet().getChannelTitle())
+            .publishedAt(publishedAt)
+            .thumbnailUrl(item.getSnippet().getThumbnails() != null &&
+                item.getSnippet().getThumbnails().getDefault() != null
+                ? item.getSnippet().getThumbnails().getDefault().getUrl() : null)
+            .videoUrl("https://www.youtube.com/watch?v=" + item.getSnippet().getResourceId().getVideoId())
+            .build();
     }
 
     @Builder
