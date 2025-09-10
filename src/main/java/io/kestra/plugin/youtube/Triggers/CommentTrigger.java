@@ -48,7 +48,7 @@ import java.util.Optional;
                     url: "{{ secret('SLACK_WEBHOOK_URL') }}"
                     payload: |
                       {
-                        "text": "New comment from {{ trigger.authorDisplayName }}: {{ trigger.textDisplay | truncate(100) }}"
+                        "text": "New comment from {{ trigger.authorDisplayName }}: {{ trigger.textDisplay }}"
                       }
 
                 triggers:
