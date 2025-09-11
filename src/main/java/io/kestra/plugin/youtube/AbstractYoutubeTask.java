@@ -36,7 +36,7 @@ public class AbstractYoutubeTask extends Task {
 
     protected YouTube createYoutubeService(RunContext runContext) throws Exception {
         String renderedAccessToken = runContext.render(this.accessToken).as(String.class).orElseThrow();
-        String renderedApplicationName = runContext.render(this.applicationName).as(String.class).orElse("kestra-yi-plugin");
+        String renderedApplicationName = runContext.render(this.applicationName).as(String.class).orElse("kestra-yt-plugin");
 
         Credential credential = new Credential(BearerToken.authorizationHeaderAccessMethod());
         credential.setAccessToken(renderedAccessToken);
