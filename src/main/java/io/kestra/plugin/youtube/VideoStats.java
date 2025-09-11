@@ -75,7 +75,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         description = "Maximum number of items that should be returned in the result set. Acceptable values are 1 to 50, inclusive."
     )
     @Builder.Default
-    private Property<Integer> maxResults = Property.ofValue(20);
+    private Property<Integer> maxResults = Property.ofValue(5);
 
     @Schema(
         title = "Include content details",
