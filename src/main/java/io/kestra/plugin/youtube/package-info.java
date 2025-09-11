@@ -1,5 +1,5 @@
 @PluginSubGroup(
-    title = "Youtube",
+    title = "YouTube",
     description = "This sub-group of plugins contains tasks for using Youtube.\n",
     categories = PluginSubGroup.PluginCategory.TOOL
 )
