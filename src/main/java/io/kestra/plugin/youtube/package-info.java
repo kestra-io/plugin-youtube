@@ -1,6 +1,6 @@
 @PluginSubGroup(
     title = "YouTube",
-    description = "This sub-group of plugins contains tasks for using Youtube.\n",
+    description = "This sub-group of plugins contains tasks for using YouTube.\n",
     categories = PluginSubGroup.PluginCategory.TOOL
 )
 package io.kestra.plugin.youtube;
