@@ -92,7 +92,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         List<String> renderedVideoIds = runContext.render(this.videoIds).asList(String.class);
         boolean renderedIncludeSnippet = runContext.render(this.includeSnippet).as(Boolean.class).orElse(false);
         boolean renderedIncludeContentDetails = runContext.render(this.includeContentDetails).as(Boolean.class).orElse(false);
-        Integer renderedMaxResults = runContext.render(this.maxResults).as(Integer.class).orElse(20);
+        Integer renderedMaxResults = runContext.render(this.maxResults).as(Integer.class).orElse(5);
 
         // Build the parts parameter based on what data is requested
         List<String> parts = new ArrayList<>();

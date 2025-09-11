@@ -95,7 +95,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "Maximum number of recent videos to check (1-50)"
     )
     @Builder.Default
-    private Property<Integer> maxResults = Property.ofValue(10);
+    private Property<Integer> maxResults = Property.ofValue(5);
 
     @Schema(
         title = "Application name",
@@ -116,7 +116,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         String renderedAccessToken = runContext.render(this.accessToken).as(String.class).orElseThrow();
         String renderedChannelId = runContext.render(this.channelId).as(String.class).orElseThrow();
         String renderedApplicationName = runContext.render(this.applicationName).as(String.class).orElse("kestra-yt-plugin");
-        Integer renderedMaxResults = runContext.render(this.maxResults).as(Integer.class).orElse(10);
+        Integer renderedMaxResults = runContext.render(this.maxResults).as(Integer.class).orElse(5);
 
         YouTube youtube = createYoutubeService(renderedAccessToken, renderedApplicationName);
 
