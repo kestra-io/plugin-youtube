@@ -22,7 +22,7 @@ public class AbstractYoutubeTask extends Task {
 
     @Schema(
         title = "Access Token",
-        description = "The OAuth2 access token for youtube API authentication"
+        description = "The OAuth2 access token for YouTube API authentication"
     )
     @NotNull
     protected Property<String> accessToken;

@@ -24,8 +24,8 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get statistics for youtube videos",
-    description = "Retrieve detailed statistics for one more youtube videos including views, likes, comments"
+    title = "Get statistics for YouTube videos",
+    description = "Retrieve detailed statistics for one more YouTube videos including views, likes, comments"
 )
 @Plugin(
     examples = {
@@ -58,7 +58,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
 
     @Schema(
         title = "Video IDs",
-        description = "List of youtube video IDs to get statistics for"
+        description = "List of YouTube video IDs to get statistics for"
     )
     @NotNull
     private Property<List<String>> videoIds;

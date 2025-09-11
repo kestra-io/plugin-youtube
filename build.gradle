@@ -176,7 +176,7 @@ jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
-                "X-Kestra-Title": "Youtube",
+                "X-Kestra-Title": "YouTube",
                 "X-Kestra-Group": project.group + ".youtube",
                 "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version

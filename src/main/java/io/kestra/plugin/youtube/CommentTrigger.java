@@ -30,8 +30,8 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger on new youtube comments",
-    description = "Monitors youtube videos for new comments and triggers executions when found."
+    title = "Trigger on new YouTube comments",
+    description = "Monitors YouTube videos for new comments and triggers executions when found."
 )
 @Plugin(
     examples = {
@@ -80,14 +80,14 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Access Token",
-        description = "The Oauth2 access token for youtube API authentication"
+        description = "The Oauth2 access token for YouTube API authentication"
     )
     @NotNull
     private Property<String> accessToken;
 
     @Schema(
         title = "Video IDs",
-        description = "List of youtube video IDs to monitor for new comments"
+        description = "List of YouTube video IDs to monitor for new comments"
     )
     @NotNull
     private Property<List<String>> videoIds;
