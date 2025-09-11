@@ -102,7 +102,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Maximum results per video",
-        description = "Maximum number of recent comments to check per video"
+        description = "Maximum number of recent comments to check per video. Acceptable values are 1 to 100, inclusive."
     )
     @Builder.Default
     private Property<Integer> maxResults = Property.ofValue(20);

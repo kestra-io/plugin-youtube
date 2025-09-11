@@ -71,6 +71,13 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
     private Property<Boolean> includeSnippet = Property.ofValue(false);
 
     @Schema(
+        title = "Maximum results per video",
+        description = "Maximum number of items that should be returned in the result set. Acceptable values are 1 to 50, inclusive."
+    )
+    @Builder.Default
+    private Property<Integer> maxResults = Property.ofValue(20);
+
+    @Schema(
         title = "Include content details",
         description = "Whether to include channels content details"
     )
@@ -85,6 +92,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         List<String> renderedVideoIds = runContext.render(this.videoIds).asList(String.class);
         boolean renderedIncludeSnippet = runContext.render(this.includeSnippet).as(Boolean.class).orElse(false);
         boolean renderedIncludeContentDetails = runContext.render(this.includeContentDetails).as(Boolean.class).orElse(false);
+        Integer renderedMaxResults = runContext.render(this.maxResults).as(Integer.class).orElse(20);
 
         // Build the parts parameter based on what data is requested
         List<String> parts = new ArrayList<>();
@@ -99,7 +107,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         YouTube.Videos.List request = youTube.videos()
             .list(Collections.singletonList(String.join(",", parts)))
             .setId(Collections.singletonList(String.join(",", renderedVideoIds)))
-            .setMaxResults(50L);
+            .setMaxResults(Long.valueOf(renderedMaxResults));
 
         VideoListResponse response = request.execute();
         List<Video> videos = response.getItems();
