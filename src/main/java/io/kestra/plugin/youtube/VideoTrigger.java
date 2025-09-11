@@ -91,7 +91,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
 
     @Schema(
-        title = "Maximus results",
+        title = "Maximum results",
         description = "Maximum number of recent videos to check (1-50)"
     )
     @Builder.Default
