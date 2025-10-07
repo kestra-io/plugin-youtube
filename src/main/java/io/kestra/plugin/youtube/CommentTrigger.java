@@ -30,7 +30,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger on new YouTube comments",
+    title = "Trigger a flow on new YouTube comments.",
     description = "Monitors YouTube videos for new comments and triggers executions when found."
 )
 @Plugin(
@@ -79,7 +79,7 @@ import java.util.Optional;
 public class CommentTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<CommentTrigger.Output> {
 
     @Schema(
-        title = "Access Token",
+        title = "Access token",
         description = "The Oauth2 access token for YouTube API authentication"
     )
     @NotNull
@@ -102,20 +102,20 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Maximum results per video",
-        description = "Maximum number of recent comments to check per video. Acceptable values are 1 to 100, inclusive."
+        description = "Maximum number of recent comments to check per video – acceptable values are 1 to 100, inclusive."
     )
     @Builder.Default
     private Property<Integer> maxResults = Property.ofValue(20);
 
     @Schema(
         title = "Order",
-        description = "Order of the comments to retrieve (time or relevance)"
+        description = "Order of the comments to retrieve (options:time or relevance)"
     )
     @Builder.Default
     private Property<String> order = Property.ofValue("time");
 
     @Schema(
-        title = "Application Name",
+        title = "Application name",
         description = "The name of the application making the API request"
     )
     @Builder.Default
@@ -144,7 +144,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         }
 
         if (videosToMonitor.isEmpty()) {
-            runContext.logger().warn("No video IDS provided to monitor");
+            runContext.logger().warn("No video IDs provided to monitor");
             return Optional.empty();
         }
 

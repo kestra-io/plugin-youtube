@@ -24,8 +24,8 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get statistics for YouTube videos",
-    description = "Retrieve detailed statistics for one more YouTube videos including views, likes, comments"
+    title = "Get statistics for YouTube videos.",
+    description = "Retrieve detailed statistics for one or more YouTube videos including views, likes, and comments"
 )
 @Plugin(
     examples = {
@@ -58,7 +58,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
 
     @Schema(
         title = "Video IDs",
-        description = "List of YouTube video IDs to get statistics for"
+        description = "List of YouTube video IDs to retrieve statistics for"
     )
     @NotNull
     private Property<List<String>> videoIds;
@@ -72,7 +72,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
 
     @Schema(
         title = "Maximum results per video",
-        description = "Maximum number of items that should be returned in the result set. Acceptable values are 1 to 50, inclusive."
+        description = "Maximum number of items that should be returned in the result set – acceptable values are 1 to 50, inclusive."
     )
     @Builder.Default
     private Property<Integer> maxResults = Property.ofValue(5);
