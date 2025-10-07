@@ -21,14 +21,14 @@ import lombok.experimental.SuperBuilder;
 public class AbstractYoutubeTask extends Task {
 
     @Schema(
-        title = "Access Token",
+        title = "Access token",
         description = "The OAuth2 access token for YouTube API authentication"
     )
     @NotNull
     protected Property<String> accessToken;
 
     @Schema(
-        title = "Application Name",
+        title = "Application name",
         description = "Name of the application making the request"
     )
     @Builder.Default

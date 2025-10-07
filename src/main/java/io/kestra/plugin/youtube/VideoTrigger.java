@@ -34,7 +34,7 @@ import java.util.Optional;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger on new YouTube videos",
+    title = "Trigger a flow on new YouTube videos.",
     description = "Monitors a YouTube channel for new videos and triggers executions when found."
 )
 @Plugin(
@@ -70,7 +70,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
     @Schema(
         title = "Access Token",
-        description = "The OAuth2 access token for YouTube api authentication"
+        description = "The OAuth2 access token for YouTube API authentication"
     )
     @NotNull
     private Property<String> accessToken;

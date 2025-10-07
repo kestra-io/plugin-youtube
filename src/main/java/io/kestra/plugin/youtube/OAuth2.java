@@ -23,8 +23,8 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Authenticate with YouTube using OAuth2",
-    description = "This task allows you to authenticate with YouTube API using OAuth2 refresh token flow."
+    title = "Authenticate with YouTube using OAuth2.",
+    description = "This task authenticates with YouTube API using OAuth2 refresh token flow."
 )
 @Plugin(
     examples = {
@@ -48,14 +48,14 @@ import java.time.Instant;
 public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
     @Schema(
         title = "The OAuth2 Client ID",
-        description = "OAuth2 client ID from google cloud console project"
+        description = "OAuth2 client ID from Google Cloud console project"
     )
     @NotNull
     private Property<String> clientId;
 
     @Schema(
         title = "The OAuth2 Client Secret",
-        description = "OAuth2 client secret from google cloud console project"
+        description = "OAuth2 client secret from Google Cloud console project"
     )
     @NotNull
     private Property<String> clientSecret;
@@ -69,7 +69,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
 
     @Schema(
         title = "Token endpoint URL",
-        description = "The google OAuth2 token endpoint URL"
+        description = "The Google OAuth2 token endpoint URL"
     )
     @Builder.Default
     private Property<String> tokenUrl= Property.ofValue("https://oauth2.googleapis.com/token");
