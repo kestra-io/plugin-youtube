@@ -1,8 +1,8 @@
 group: io.kestra.plugin.youtube
 name: "youtube"
 title: "YouTube"
-description: "This sub-group of plugins contains tasks for interacting with YouTube."
-body: ""
+description: "Tasks that interact with the YouTube Data API."
+body: "Provide API credentials and channel or video identifiers to search videos, list playlists, or manage uploads, returning metadata for content and reporting workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
