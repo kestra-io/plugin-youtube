@@ -3,11 +3,11 @@ plugins {
     id "idea"
     id 'jacoco'
     id "com.adarshr.test-logger" version "4.0.0"
-    id "com.gradleup.shadow" version "9.3.0"
+    id "com.gradleup.shadow" version "9.3.1"
     id 'signing'
     id "com.github.ben-manes.versions" version "0.53.0"
     id 'net.researchgate.release' version '3.1.0'
-    id "com.vanniktech.maven.publish" version "0.34.0"
+    id "com.vanniktech.maven.publish" version "0.36.0"
     id "io.kestra.gradle.inject-bom-versions" version "1.0.0"
 }
 
@@ -29,7 +29,7 @@ java {
 }
 
 group = "io.kestra.plugin"
-description = 'Plugin template for Kestra'
+description = 'YouTube plugin for Kestra'
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
@@ -79,7 +79,7 @@ dependencies {
 
     implementation "com.google.api-client:google-api-client:2.8.1"
     implementation "com.google.oauth-client:google-oauth-client-jetty:1.39.0"
-    implementation "com.google.apis:google-api-services-youtube:v3-rev20251125-2.0.0"
+    implementation "com.google.apis:google-api-services-youtube:v3-rev20251217-2.0.0"
 
     // micronaut
     testAnnotationProcessor "io.micronaut:micronaut-inject-java"
@@ -118,7 +118,7 @@ configurations {
 }
 
 dependencies {
-    agent "org.aspectj:aspectjweaver:1.9.25"
+    agent "org.aspectj:aspectjweaver:1.9.25.1"
 }
 
 test {
