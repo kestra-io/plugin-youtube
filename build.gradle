@@ -77,7 +77,7 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok"
     testCompileOnly 'org.projectlombok:lombok'
 
-    implementation "com.google.api-client:google-api-client:2.8.1"
+    implementation "com.google.api-client:google-api-client:2.9.0"
     implementation "com.google.oauth-client:google-oauth-client-jetty:1.39.0"
     implementation "com.google.apis:google-api-services-youtube:v3-rev20251217-2.0.0"
 
