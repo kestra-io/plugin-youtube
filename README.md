@@ -36,9 +36,9 @@
 <p align="center" style="color:grey;"><i>Get started with Kestra in 4 minutes.</i></p>
 
 
-# Kestra Plugin Template
+# Kestra YouTube Plugin
 
-> A template for creating Kestra plugins
+> Interact with the [YouTube](https://www.youtube.com/) API from your Kestra workflows. Automate video data retrieval and content management within your data pipelines.
 
 ![Kestra orchestrator](https://kestra.io/video.gif)
 
