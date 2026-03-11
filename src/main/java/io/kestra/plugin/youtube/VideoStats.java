@@ -1,22 +1,24 @@
 package io.kestra.plugin.youtube;
 
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.*;
+
 import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.Video;
 import com.google.api.services.youtube.model.VideoListResponse;
 import com.google.api.services.youtube.model.VideoStatistics;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
 
 @SuperBuilder
 @ToString
@@ -84,7 +86,6 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
     @Builder.Default
     private Property<Boolean> includeContentDetails = Property.ofValue(false);
 
-
     @Override
     public Output run(RunContext runContext) throws Exception {
         YouTube youTube = createYoutubeService(runContext);
@@ -135,11 +136,11 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
                     .description(video.getSnippet().getDescription())
                     .channelId(video.getSnippet().getChannelId())
                     .channelTitle(video.getSnippet().getChannelTitle())
-                    .publishedAt(video.getSnippet().getPublishedAt() != null ?
-                        String.valueOf(Instant.ofEpochMilli(video.getSnippet().getPublishedAt().getValue())) : null)
-                    .thumbnailUrl(video.getSnippet().getThumbnails() != null &&
-                        video.getSnippet().getThumbnails().getDefault() != null ?
-                        video.getSnippet().getThumbnails().getDefault().getUrl() : null);
+                    .publishedAt(video.getSnippet().getPublishedAt() != null ? String.valueOf(Instant.ofEpochMilli(video.getSnippet().getPublishedAt().getValue())) : null)
+                    .thumbnailUrl(
+                        video.getSnippet().getThumbnails() != null &&
+                            video.getSnippet().getThumbnails().getDefault() != null ? video.getSnippet().getThumbnails().getDefault().getUrl() : null
+                    );
             }
 
             if (renderedIncludeContentDetails && video.getContentDetails() != null) {
@@ -161,54 +162,54 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
             .totalLikes(totals.get("likes"))
             .totalComments(totals.get("comments"))
             .build();
-        }
+    }
 
-        private Map<String, BigInteger> calculateTotals(List<VideoStatsData>videos) {
-            Map<String, BigInteger> totals = new HashMap<>();
-            BigInteger totalViews = BigInteger.ZERO;
-            BigInteger totalLikes = BigInteger.ZERO;
-            BigInteger totalComments = BigInteger.ZERO;
+    private Map<String, BigInteger> calculateTotals(List<VideoStatsData> videos) {
+        Map<String, BigInteger> totals = new HashMap<>();
+        BigInteger totalViews = BigInteger.ZERO;
+        BigInteger totalLikes = BigInteger.ZERO;
+        BigInteger totalComments = BigInteger.ZERO;
 
-            for (VideoStatsData video: videos) {
-                if (video.getViewCount() != null) {
-                    totalViews = totalViews.add(video.getViewCount());
-                }
-                if (video.getLikeCount() != null) {
-                    totalLikes = totalLikes.add(video.getLikeCount());
-                }
-                if (video.getCommentCount() != null) {
-                    totalComments = totalComments.add(video.getCommentCount());
-                }
+        for (VideoStatsData video : videos) {
+            if (video.getViewCount() != null) {
+                totalViews = totalViews.add(video.getViewCount());
             }
-
-            totals.put("views", totalViews);
-            totals.put("likes", totalLikes);
-            totals.put("comments", totalComments);
-
-            return totals;
+            if (video.getLikeCount() != null) {
+                totalLikes = totalLikes.add(video.getLikeCount());
+            }
+            if (video.getCommentCount() != null) {
+                totalComments = totalComments.add(video.getCommentCount());
+            }
         }
 
-        @Builder
+        totals.put("views", totalViews);
+        totals.put("likes", totalLikes);
+        totals.put("comments", totalComments);
+
+        return totals;
+    }
+
+    @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
         @Schema(title = "Video statistics data")
-            private final List<VideoStatsData> videos;
+        private final List<VideoStatsData> videos;
 
         @Schema(title = "Total number of videos processed")
-            private final Integer totalVideos;
+        private final Integer totalVideos;
 
         @Schema(title = "Total views across all videos")
-            private final BigInteger totalViews;
+        private final BigInteger totalViews;
 
         @Schema(title = "Total likes across all videos")
-            private final BigInteger totalLikes;
+        private final BigInteger totalLikes;
 
         @Schema(title = "Total comments across all videos")
-            private final BigInteger totalComments;
-        }
+        private final BigInteger totalComments;
+    }
 
-        @Builder
+    @Builder
     @Getter
     public static class VideoStatsData {
         private final String videoId;

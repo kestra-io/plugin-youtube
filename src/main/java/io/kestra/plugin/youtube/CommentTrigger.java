@@ -1,10 +1,17 @@
 package io.kestra.plugin.youtube;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.youtube.YouTube;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -13,16 +20,11 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @SuperBuilder
 @ToString
@@ -139,7 +141,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         YouTube youTube = createYoutubeService(renderedAccessToken, renderedApplicationName);
 
         List<String> videosToMonitor = new ArrayList<>();
-        if (this.videoIds != null ){
+        if (this.videoIds != null) {
             videosToMonitor.addAll(renderedVideoIds);
         }
 
@@ -156,9 +158,8 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
         List<CommentData> newComments = new ArrayList<>();
 
-
         try {
-            for (String videoId: videosToMonitor) {
+            for (String videoId : videosToMonitor) {
                 YouTube.CommentThreads.List request = youTube.commentThreads()
                     .list(List.of("snippet"))
                     .setVideoId(videoId)
@@ -166,9 +167,11 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
                     .setOrder(renderedOrder);
 
                 var response = request.execute();
-                if (response.getItems() == null) continue;
+                if (response.getItems() == null)
+                    continue;
 
-                response.getItems().forEach(thread -> {
+                response.getItems().forEach(thread ->
+                {
                     var snippet = thread.getSnippet().getTopLevelComment().getSnippet();
                     Instant publishedAt = Instant.ofEpochMilli(snippet.getPublishedAt().getValue());
 
@@ -182,7 +185,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
                             .build();
                         newComments.add(comment);
                     }
-                    });
+                });
             }
 
             if (newComments.isEmpty()) {

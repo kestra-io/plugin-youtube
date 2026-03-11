@@ -1,6 +1,6 @@
 @PluginSubGroup(
     title = "YouTube",
-    description = "This sub-group of plugins contains tasks for interacting with YouTube.\n",categories = {
+    description = "This sub-group of plugins contains tasks for interacting with YouTube.\n", categories = {
         PluginSubGroup.PluginCategory.BUSINESS
     }
 )

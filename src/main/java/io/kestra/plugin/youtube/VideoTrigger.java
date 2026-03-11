@@ -1,5 +1,10 @@
 package io.kestra.plugin.youtube;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.Credential;
@@ -10,6 +15,7 @@ import com.google.api.services.youtube.model.Channel;
 import com.google.api.services.youtube.model.ChannelListResponse;
 import com.google.api.services.youtube.model.PlaylistItem;
 import com.google.api.services.youtube.model.PlaylistItemListResponse;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.conditions.ConditionContext;
@@ -17,16 +23,11 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 @SuperBuilder
 @ToString
@@ -89,7 +90,6 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
     @Builder.Default
     private Duration interval = Duration.ofHours(1);
 
-
     @Schema(
         title = "Maximum results",
         description = "Maximum number of recent videos to check (1-50)"
@@ -120,8 +120,8 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
         YouTube youtube = createYoutubeService(renderedAccessToken, renderedApplicationName);
 
-        try{
-            String  uploadsPlaylistId = getUploadsPlaylistId(youtube, renderedChannelId);
+        try {
+            String uploadsPlaylistId = getUploadsPlaylistId(youtube, renderedChannelId);
             if (uploadsPlaylistId == null) {
                 runContext.logger().warn("Could not find uploads playlist for channel: {}", renderedChannelId);
                 return Optional.empty();
@@ -137,8 +137,8 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
             List<PlaylistItem> items = response.getItems();
 
             if (items.isEmpty()) {
-               runContext.logger().info("No videos found in uploads playlist");
-               return Optional.empty();
+                runContext.logger().info("No videos found in uploads playlist");
+                return Optional.empty();
             }
 
             Instant checkTime = Instant.now().minus(this.interval);
@@ -154,8 +154,10 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
                     item.getSnippet().getPublishedAt().getValue()
                 );
 
-                runContext.logger().debug("Video '{}' published at: {}",
-                    item.getSnippet().getTitle(), publishedAt);
+                runContext.logger().debug(
+                    "Video '{}' published at: {}",
+                    item.getSnippet().getTitle(), publishedAt
+                );
 
                 if (publishedAt.isAfter(checkTime)) {
                     VideoData videoData = createVideoData(item);
@@ -282,6 +284,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         @Schema(title = "All new videos found")
         private final List<VideoData> allNewVideos;
     }
+
     private VideoData createVideoData(PlaylistItem item) {
         Instant publishedAt = Instant.ofEpochMilli(
             item.getSnippet().getPublishedAt().getValue()
@@ -294,9 +297,12 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
             .channelId(item.getSnippet().getChannelId())
             .channelTitle(item.getSnippet().getChannelTitle())
             .publishedAt(publishedAt)
-            .thumbnailUrl(item.getSnippet().getThumbnails() != null &&
-                item.getSnippet().getThumbnails().getDefault() != null
-                ? item.getSnippet().getThumbnails().getDefault().getUrl() : null)
+            .thumbnailUrl(
+                item.getSnippet().getThumbnails() != null &&
+                    item.getSnippet().getThumbnails().getDefault() != null
+                        ? item.getSnippet().getThumbnails().getDefault().getUrl()
+                        : null
+            )
             .videoUrl("https://www.youtube.com/watch?v=" + item.getSnippet().getResourceId().getVideoId())
             .build();
     }

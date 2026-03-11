@@ -5,9 +5,11 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.services.youtube.YouTube;
+
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -41,7 +43,7 @@ public class AbstractYoutubeTask extends Task {
         Credential credential = new Credential(BearerToken.authorizationHeaderAccessMethod());
         credential.setAccessToken(renderedAccessToken);
 
-        return  new YouTube.Builder(
+        return new YouTube.Builder(
             new NetHttpTransport(),
             new GsonFactory(),
             credential

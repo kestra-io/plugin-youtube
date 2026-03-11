@@ -1,21 +1,23 @@
 package io.kestra.plugin.youtube;
 
+import java.io.IOException;
+import java.time.Instant;
+
 import com.google.api.client.auth.oauth2.*;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.io.IOException;
-import java.time.Instant;
 
 @SuperBuilder
 @ToString
@@ -72,7 +74,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "The Google OAuth2 token endpoint URL"
     )
     @Builder.Default
-    private Property<String> tokenUrl= Property.ofValue("https://oauth2.googleapis.com/token");
+    private Property<String> tokenUrl = Property.ofValue("https://oauth2.googleapis.com/token");
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -101,7 +103,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
 
             String accessToken = response.getAccessToken();
             Long expiresIn = response.getExpiresInSeconds();
-            Instant expiresAt = expiresIn != null ? Instant.now().plusSeconds(expiresIn): null;
+            Instant expiresAt = expiresIn != null ? Instant.now().plusSeconds(expiresIn) : null;
 
             // Build output
             return Output.builder()
@@ -112,7 +114,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
                 .expiresAt(expiresAt)
                 .build();
 
-        } catch (IOException  e) {
+        } catch (IOException e) {
             runContext.logger().error("Failed to refresh OAuth2 token", e);
             throw new RuntimeException("OAuth2 authentication failed: " + e.getMessage(), e);
         }
