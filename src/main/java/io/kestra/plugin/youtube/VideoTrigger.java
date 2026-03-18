@@ -49,12 +49,9 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: notify_slack
-                    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+                    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
                     url: "{{ secret('SLACK_WEBHOOK_URL') }}"
-                    payload: |
-                      {
-                        "text": "New video: {{ trigger.title }} - {{ trigger.videoUrl }}"
-                      }
+                    messageText: "New video: {{ trigger.title }} - {{ trigger.videoUrl }}"
 
                 triggers:
                   - id: new_video_trigger

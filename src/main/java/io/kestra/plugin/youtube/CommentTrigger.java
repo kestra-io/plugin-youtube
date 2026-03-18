@@ -46,12 +46,9 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: notify_slack
-                    type: io.kestra.plugin.notifications.slack.SlackIncomingWebhook
+                    type: io.kestra.plugin.slack.notifications.SlackIncomingWebhook
                     url: "{{ secret('SLACK_WEBHOOK_URL') }}"
-                    payload: |
-                      {
-                        "text": "New comment from {{ trigger.authorDisplayName }}: {{ trigger.textDisplay }}"
-                      }
+                    messageText: "New comment from {{ trigger.authorDisplayName }}: {{ trigger.textDisplay }}"
 
                 triggers:
                   - id: new_comment_trigger
