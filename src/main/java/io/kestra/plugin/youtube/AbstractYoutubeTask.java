@@ -20,7 +20,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class AbstractYoutubeTask extends Task {
+public abstract class AbstractYoutubeTask extends Task {
 
     @Schema(
         title = "Access token",
