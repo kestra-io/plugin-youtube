@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -71,6 +72,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "The OAuth2 access token for YouTube API authentication"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> accessToken;
 
     @Schema(
@@ -78,6 +80,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "The YouTube channel ID to monitor for new videos"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> channelId;
 
     @Schema(
@@ -85,6 +88,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "How often to check for new videos"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Duration interval = Duration.ofHours(1);
 
     @Schema(
@@ -92,6 +96,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "Maximum number of recent videos to check (1-50)"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<Integer> maxResults = Property.ofValue(5);
 
     @Schema(
@@ -99,6 +104,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "Name of the application making the API requests"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<String> applicationName = Property.ofValue("kestra-yt-plugin");
 
     @Override
