@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -63,6 +64,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         description = "List of YouTube video IDs to retrieve statistics for"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<List<String>> videoIds;
 
     @Schema(
@@ -70,6 +72,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         description = "Whether to include video snippet data (title, description, thumbnail, etc.) in addition to statistics"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> includeSnippet = Property.ofValue(false);
 
     @Schema(
@@ -77,6 +80,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         description = "Maximum number of items that should be returned in the result set – acceptable values are 1 to 50, inclusive."
     )
     @Builder.Default
+    @PluginProperty(group = "processing")
     private Property<Integer> maxResults = Property.ofValue(5);
 
     @Schema(
@@ -84,6 +88,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
         description = "Whether to include channels content details"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> includeContentDetails = Property.ofValue(false);
 
     @Override

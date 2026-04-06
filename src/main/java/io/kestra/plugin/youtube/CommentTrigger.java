@@ -82,6 +82,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         description = "The Oauth2 access token for YouTube API authentication"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> accessToken;
 
     @Schema(
@@ -89,13 +90,14 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         description = "List of YouTube video IDs to monitor for new comments"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<List<String>> videoIds;
 
     @Schema(
         title = "Polling interval",
         description = "How often to check for new comments"
     )
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Builder.Default
     private Duration interval = Duration.ofMinutes(30);
 
@@ -104,6 +106,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         description = "Maximum number of recent comments to check per video – acceptable values are 1 to 100, inclusive."
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<Integer> maxResults = Property.ofValue(20);
 
     @Schema(
@@ -111,6 +114,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         description = "Order of the comments to retrieve (options:time or relevance)"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<String> order = Property.ofValue("time");
 
     @Schema(
@@ -118,6 +122,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         description = "The name of the application making the API request"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<String> applicationName = Property.ofValue("kestra-yt-plugin");
 
     @Override

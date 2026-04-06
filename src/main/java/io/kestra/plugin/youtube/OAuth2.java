@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -53,6 +54,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "OAuth2 client ID from Google Cloud console project"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> clientId;
 
     @Schema(
@@ -60,6 +62,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "OAuth2 client secret from Google Cloud console project"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> clientSecret;
 
     @Schema(
@@ -67,6 +70,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "Refresh token obtained during the initial authorization flow"
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> refreshToken;
 
     @Schema(
@@ -74,6 +78,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "The Google OAuth2 token endpoint URL"
     )
     @Builder.Default
+    @PluginProperty(group = "connection")
     private Property<String> tokenUrl = Property.ofValue("https://oauth2.googleapis.com/token");
 
     @Override

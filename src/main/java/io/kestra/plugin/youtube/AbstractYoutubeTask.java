@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -27,6 +28,7 @@ public abstract class AbstractYoutubeTask extends Task {
         description = "The OAuth2 access token for YouTube API authentication"
     )
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<String> accessToken;
 
     @Schema(
@@ -34,6 +36,7 @@ public abstract class AbstractYoutubeTask extends Task {
         description = "Name of the application making the request"
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     protected Property<String> applicationName = Property.ofValue("kestra-yt-plugin");
 
     protected YouTube createYoutubeService(RunContext runContext) throws Exception {
