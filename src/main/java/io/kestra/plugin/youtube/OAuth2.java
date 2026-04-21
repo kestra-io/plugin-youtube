@@ -62,7 +62,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "OAuth2 client secret from Google Cloud console project"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "main", secret = true)
     private Property<String> clientSecret;
 
     @Schema(
@@ -70,7 +70,7 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "Refresh token obtained during the initial authorization flow"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "main", secret = true)
     private Property<String> refreshToken;
 
     @Schema(
