@@ -72,7 +72,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "The OAuth2 access token for YouTube API authentication"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(secret = true, group = "main")
     private Property<String> accessToken;
 
     @Schema(

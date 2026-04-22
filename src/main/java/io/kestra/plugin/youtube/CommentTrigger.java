@@ -82,7 +82,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         description = "The Oauth2 access token for YouTube API authentication"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(secret = true, group = "main")
     private Property<String> accessToken;
 
     @Schema(

@@ -28,7 +28,7 @@ public abstract class AbstractYoutubeTask extends Task {
         description = "The OAuth2 access token for YouTube API authentication"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(secret = true, group = "main")
     protected Property<String> accessToken;
 
     @Schema(
