@@ -199,18 +199,6 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         }
     }
 
-    private Instant calculateLastCheckTime(TriggerContext context) {
-        Optional<Instant> nextExecutionDate = Optional.ofNullable(context.getNextExecutionDate().toInstant());
-
-        if (nextExecutionDate.isPresent()) {
-            // If we have a next execution date, the last check would have been one interval before that
-            return nextExecutionDate.get().minus(this.interval);
-        } else {
-            // For first execution or if no next execution date is available, check videos from the last interval
-            return Instant.now().minus(this.interval);
-        }
-    }
-
     private YouTube createYoutubeService(String renderedAccessToken, String renderedApplicationName) {
         Credential credential = new Credential(BearerToken.authorizationHeaderAccessMethod());
         credential.setAccessToken(renderedAccessToken);
