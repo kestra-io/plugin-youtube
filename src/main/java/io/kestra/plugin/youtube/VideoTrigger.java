@@ -36,8 +36,8 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow on new YouTube videos.",
-    description = "Monitors a YouTube channel for new videos and triggers executions when found."
+    title = "Trigger flow on new channel uploads",
+    description = "Polls a channel's uploads playlist on a fixed interval (default PT1H with a 5m buffer) and starts a Flow when new videos publish. Uses an OAuth2 access token and checks up to maxResults items (default 5, YouTube limit 50)."
 )
 @Plugin(
     examples = {
@@ -68,8 +68,8 @@ import io.kestra.core.models.annotations.PluginProperty;
 public class VideoTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<VideoTrigger.Output> {
 
     @Schema(
-        title = "Access Token",
-        description = "The OAuth2 access token for YouTube API authentication"
+        title = "Access token",
+        description = "OAuth2 bearer token used to call the YouTube Data API"
     )
     @NotNull
     @PluginProperty(group = "main")
@@ -77,7 +77,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
     @Schema(
         title = "Channel ID",
-        description = "The YouTube channel ID to monitor for new videos"
+        description = "YouTube channel ID whose uploads playlist is polled"
     )
     @NotNull
     @PluginProperty(group = "main")
@@ -85,7 +85,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
     @Schema(
         title = "Polling interval",
-        description = "How often to check for new videos"
+        description = "How often to check for new videos; defaults to PT1H"
     )
     @Builder.Default
     @PluginProperty(group = "execution")
@@ -93,7 +93,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
     @Schema(
         title = "Maximum results",
-        description = "Maximum number of recent videos to check (1-50)"
+        description = "How many recent uploads to fetch per poll (1-50, default 5)"
     )
     @Builder.Default
     @PluginProperty(group = "execution")
@@ -101,7 +101,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
     @Schema(
         title = "Application name",
-        description = "Name of the application making the API requests"
+        description = "Application name sent to YouTube API; defaults to kestra-yt-plugin"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
@@ -234,17 +234,17 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
     public static class Output implements io.kestra.core.models.tasks.Output {
 
         @Schema(
-            title = "Video ID of the latest new video"
+            title = "Latest video ID"
         )
         private final String videoId;
 
         @Schema(
-            title = "Title of the latest new video"
+            title = "Latest video title"
         )
         private final String title;
 
         @Schema(
-            title = "Description of the latest new video"
+            title = "Latest video description"
         )
         private final String description;
 
@@ -259,17 +259,17 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         private final String channelTitle;
 
         @Schema(
-            title = "Published date of the latest new video"
+            title = "Published timestamp (UTC)"
         )
         private final Instant publishedAt;
 
-        @Schema(title = "Thumbnail URL of the latest new video")
+        @Schema(title = "Latest video thumbnail URL")
         private final String thumbnailUrl;
 
-        @Schema(title = "YouTube URL of the latest new video")
+        @Schema(title = "Latest video watch URL")
         private final String videoUrl;
 
-        @Schema(title = "Number of new videos found")
+        @Schema(title = "Count of new videos found")
         private final Integer newVideosCount;
 
         @Schema(title = "All new videos found")
