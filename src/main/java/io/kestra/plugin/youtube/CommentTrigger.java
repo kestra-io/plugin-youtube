@@ -32,8 +32,8 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow on new YouTube comments.",
-    description = "Monitors YouTube videos for new comments and triggers executions when found."
+    title = "Trigger flow on new YouTube comments",
+    description = "Polls one or more video IDs for comments newer than the last interval (default PT30M). Uses an OAuth2 bearer token, honors YouTube's 1–100 maxResults limit (default 20), and fetches comments ordered by time or relevance."
 )
 @Plugin(
     examples = {
@@ -79,7 +79,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Access token",
-        description = "The Oauth2 access token for YouTube API authentication"
+        description = "OAuth2 bearer token used to call the YouTube Data API"
     )
     @NotNull
     @PluginProperty(group = "main")
@@ -87,7 +87,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Video IDs",
-        description = "List of YouTube video IDs to monitor for new comments"
+        description = "YouTube video IDs to monitor for new comments"
     )
     @NotNull
     @PluginProperty(group = "main")
@@ -95,7 +95,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Polling interval",
-        description = "How often to check for new comments"
+        description = "How often to check for new comments; defaults to PT30M"
     )
     @PluginProperty(group = "execution")
     @Builder.Default
@@ -103,7 +103,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Maximum results per video",
-        description = "Maximum number of recent comments to check per video – acceptable values are 1 to 100, inclusive."
+        description = "How many recent comments to fetch per video (1-100, default 20)"
     )
     @Builder.Default
     @PluginProperty(group = "execution")
@@ -111,7 +111,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Order",
-        description = "Order of the comments to retrieve (options:time or relevance)"
+        description = "Order of comments to retrieve: time or relevance; defaults to time"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
@@ -119,7 +119,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
 
     @Schema(
         title = "Application name",
-        description = "The name of the application making the API request"
+        description = "Application name sent to YouTube API; defaults to kestra-yt-plugin"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
