@@ -25,7 +25,7 @@ public abstract class AbstractYoutubeTask extends Task {
 
     @Schema(
         title = "Access token",
-        description = "The OAuth2 access token for YouTube API authentication"
+        description = "OAuth2 bearer token used for YouTube Data API calls"
     )
     @NotNull
     @PluginProperty(group = "main")
@@ -33,7 +33,7 @@ public abstract class AbstractYoutubeTask extends Task {
 
     @Schema(
         title = "Application name",
-        description = "Name of the application making the request"
+        description = "Application name sent with YouTube requests; defaults to kestra-yt-plugin"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
