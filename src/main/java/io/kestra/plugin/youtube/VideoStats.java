@@ -27,7 +27,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Get statistics for YouTube videos.",
+    title = "Get statistics for YouTube videos",
     description = "Retrieve detailed statistics for one or more YouTube videos including views, likes, and comments"
 )
 @Plugin(

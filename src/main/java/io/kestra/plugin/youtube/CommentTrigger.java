@@ -62,7 +62,11 @@ import lombok.experimental.SuperBuilder;
         ),
         @Example(
             title = "Monitor multiple videos for comments",
+            full = true,
             code = """
+                id: youtube_multi_video_comments
+                namespace: company.team
+
                 triggers:
                   - id: multi_video_comments
                     type: io.kestra.plugin.youtube.CommentTrigger
@@ -82,7 +86,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
         description = "OAuth2 bearer token used to call the YouTube Data API"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "main", secret = true)
     private Property<String> accessToken;
 
     @Schema(
@@ -232,12 +236,25 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
+        @Schema(title = "ID of the video the comment belongs to")
         private final String videoId;
+
+        @Schema(title = "Comment ID")
         private final String commentId;
+
+        @Schema(title = "Comment text")
         private final String textDisplay;
+
+        @Schema(title = "Display name of the comment author")
         private final String authorDisplayName;
+
+        @Schema(title = "Time the comment was published")
         private final Instant publishedAt;
+
+        @Schema(title = "Number of new comments detected")
         private final Integer newCommentsCount;
+
+        @Schema(title = "All new comments detected")
         private final List<CommentData> allNewComments;
     }
 

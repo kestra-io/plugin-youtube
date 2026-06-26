@@ -26,7 +26,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Authenticate with YouTube using OAuth2.",
+    title = "Authenticate with YouTube using OAuth2",
     description = "This task authenticates with YouTube API using OAuth2 refresh token flow."
 )
 @Plugin(
