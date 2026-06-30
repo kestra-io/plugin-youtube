@@ -73,6 +73,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
     )
     @NotNull
     @PluginProperty(group = "main", secret = true)
+    @ToString.Exclude
     private Property<String> accessToken;
 
     @Schema(

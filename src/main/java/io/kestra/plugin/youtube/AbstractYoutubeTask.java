@@ -29,6 +29,7 @@ public abstract class AbstractYoutubeTask extends Task {
     )
     @NotNull
     @PluginProperty(group = "main", secret = true)
+    @ToString.Exclude
     protected Property<String> accessToken;
 
     @Schema(

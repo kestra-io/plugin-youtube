@@ -87,6 +87,7 @@ public class CommentTrigger extends AbstractTrigger implements PollingTriggerInt
     )
     @NotNull
     @PluginProperty(group = "main", secret = true)
+    @ToString.Exclude
     private Property<String> accessToken;
 
     @Schema(
