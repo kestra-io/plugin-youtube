@@ -54,7 +54,8 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
         description = "OAuth2 client ID from Google Cloud console project"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "main", secret = true)
+    @ToString.Exclude
     private Property<String> clientId;
 
     @Schema(
@@ -130,8 +131,11 @@ public class OAuth2 extends Task implements RunnableTask<OAuth2.Output> {
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
             title = "Access Token",
-            description = "OAuth2 access token for API authentication"
+            description = "OAuth2 access token for API authentication. " +
+                "WARNING: This token is stored in task outputs and visible to users with execution read access. " +
+                "Restrict namespace permissions and prefer storing tokens in Kestra's secret store."
         )
+        @ToString.Exclude
         private final String accessToken;
 
         @Schema(
