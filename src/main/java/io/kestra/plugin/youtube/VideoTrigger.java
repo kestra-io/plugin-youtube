@@ -72,7 +72,8 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         description = "OAuth2 bearer token used to call the YouTube Data API"
     )
     @NotNull
-    @PluginProperty(group = "main")
+    @PluginProperty(group = "main", secret = true)
+    @ToString.Exclude
     private Property<String> accessToken;
 
     @Schema(
