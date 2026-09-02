@@ -4,7 +4,7 @@ Fetch YouTube video statistics and monitor new videos and comments from Kestra f
 
 ## Authentication
 
-Tasks use a YouTube OAuth2 `accessToken` (Bearer token). Use the `OAuth2` task to exchange a `refreshToken` for a fresh access token — set `clientId`, `clientSecret`, and `refreshToken` (all required). The `tokenUrl` defaults to `https://oauth2.googleapis.com/token`. The output `accessToken` can then be passed to other tasks. Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and apply connection properties globally with [plugin defaults](https://kestra.io/docs/workflow-components/plugin-defaults).
+Tasks use a YouTube OAuth2 `accessToken` (Bearer token). Use the `OAuth2` task to exchange a `refreshToken` for a fresh access token — set `clientId`, `clientSecret`, and `refreshToken` (all required). The `tokenUrl` defaults to `https://oauth2.googleapis.com/token`. The output `accessToken` can then be passed to other tasks. Store secrets in [secrets](https://kestra.io/docs/concepts/secret) and set connection properties on each task.
 
 ## Tasks
 
