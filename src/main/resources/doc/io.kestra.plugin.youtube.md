@@ -14,6 +14,6 @@ Tasks use a YouTube OAuth2 `accessToken` (Bearer token). Use the `OAuth2` task t
 
 ## Triggers
 
-`VideoTrigger` polls a YouTube channel for new videos — set `accessToken` (required) and `channelId` (required). The polling `interval` defaults to 1 hour. The `maxResults` per poll defaults to 5. The trigger output includes `videoId`, `title`, `description`, `channelId`, `publishedAt`, `videoUrl`, `newVideosCount`, and `allNewVideos`.
+`VideoTrigger` polls a YouTube channel for new videos — set `accessToken` (required) and `channelId` (required). The polling `interval` defaults to 1 hour. The `maxResults` per poll defaults to 5. The trigger output includes `videoId`, `title`, `description`, `channelId`, `publishedAt`, `videoUrl`, `newVideosCount`, and `allNewVideos`. Each poll looks back `interval` plus 5 minutes, and videos already emitted are remembered in the namespace KV store, so each video fires once. Set `on` (default `CREATE`), `stateKey`, and `stateTtl` to change this; `stateTtl` must stay longer than the look-back.
 
 `CommentTrigger` polls one or more videos for new comments — set `accessToken` (required) and `videoIds` (required). The polling `interval` defaults to 30 minutes. Set `maxResults` (default 20) and `order` (default `time`). The trigger output includes `videoId`, `commentId`, `textDisplay`, `authorDisplayName`, `publishedAt`, `newCommentsCount`, and `allNewComments`.

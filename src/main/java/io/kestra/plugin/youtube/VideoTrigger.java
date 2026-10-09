@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.api.client.auth.oauth2.BearerToken;
@@ -30,6 +31,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import static io.kestra.core.models.triggers.StatefulTriggerService.computeAndUpdateState;
+import static io.kestra.core.models.triggers.StatefulTriggerService.defaultKey;
+import static io.kestra.core.models.triggers.StatefulTriggerService.readState;
+import static io.kestra.core.models.triggers.StatefulTriggerService.writeState;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -37,7 +43,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Trigger flow on new channel uploads",
-    description = "Polls a channel's uploads playlist on a fixed interval (default PT1H with a 5m buffer) and starts a Flow when new videos publish. Uses an OAuth2 access token and checks up to maxResults items (default 5, YouTube limit 50)."
+    description = "Polls a channel's uploads playlist on a fixed interval (default PT1H with a 5m buffer) and starts a Flow when new videos publish. Uses an OAuth2 access token and checks up to maxResults items (default 5, YouTube limit 50). Videos already emitted are remembered in the KV store, so a video fires once even though consecutive polls overlap."
 )
 @Plugin(
     examples = {
@@ -65,7 +71,10 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class VideoTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<VideoTrigger.Output> {
+public class VideoTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<VideoTrigger.Output>, StatefulTriggerInterface {
+    // Extra look-back on each poll to account for delays in YouTube processing
+    private static final Duration PROCESSING_BUFFER = Duration.ofMinutes(5);
+    private static final Duration DEFAULT_STATE_TTL = Duration.ofDays(7);
 
     @Schema(
         title = "Access token",
@@ -108,6 +117,31 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
     @PluginProperty(group = "advanced")
     private Property<String> applicationName = Property.ofValue("kestra-yt-plugin");
 
+    @Schema(
+        title = "Trigger event type",
+        description = """
+            - `CREATE`: fires for videos the trigger has not emitted before.
+            - `UPDATE`: fires when a video it has already seen changes title while still inside the polling window.
+            - `CREATE_OR_UPDATE`: fires on either."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<On> on = Property.ofValue(On.CREATE);
+
+    @Schema(
+        title = "State key",
+        description = "KV key under which emitted videos are stored. Defaults to `<namespace>_<flowId>_<triggerId>`."
+    )
+    @PluginProperty(group = "advanced")
+    private Property<String> stateKey;
+
+    @Schema(
+        title = "State TTL",
+        description = "How long an emitted video is remembered, e.g. `P30D`. Must be longer than `interval` plus 5 minutes, or a video can fire again. Defaults to 7 days, or twice that look-back if longer."
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Duration> stateTtl;
+
     @Override
     public Duration getInterval() {
         return this.interval;
@@ -141,59 +175,88 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
                 return Optional.empty();
             }
 
-            Instant checkTime = Instant.now().minus(this.interval);
-
-            // Add a small buffer to account for delays in YouTube processing
-            checkTime = checkTime.minus(Duration.ofMinutes(5));
-
-            runContext.logger().info("Looking for videos published after: {}", checkTime);
-
-            List<VideoData> newVideos = new ArrayList<>();
-            for (PlaylistItem item : items) {
-                Instant publishedAt = Instant.ofEpochMilli(
-                    item.getSnippet().getPublishedAt().getValue()
-                );
-
-                runContext.logger().debug(
-                    "Video '{}' published at: {}",
-                    item.getSnippet().getTitle(), publishedAt
-                );
-
-                if (publishedAt.isAfter(checkTime)) {
-                    VideoData videoData = createVideoData(item);
-                    newVideos.add(videoData);
-                    runContext.logger().info("Found new video: {}", videoData.getTitle());
-                }
-            }
-
-            if (newVideos.isEmpty()) {
-                runContext.logger().info("No new videos found since last check");
-                return Optional.empty();
-            }
-
-            VideoData latestVideo = newVideos.getFirst();
-
-            Output output = Output.builder()
-                .videoId(latestVideo.getVideoId())
-                .title(latestVideo.getTitle())
-                .description(latestVideo.getDescription())
-                .channelId(latestVideo.getChannelId())
-                .channelTitle(latestVideo.getChannelTitle())
-                .publishedAt(latestVideo.getPublishedAt())
-                .thumbnailUrl(latestVideo.getThumbnailUrl())
-                .videoUrl(latestVideo.getVideoUrl())
-                .newVideosCount(newVideos.size())
-                .allNewVideos(newVideos)
-                .build();
-
-            Execution execution = TriggerService.generateExecution(this, conditionContext, context, output);
-
-            return Optional.of(execution);
+            return evaluate(conditionContext, context, items);
 
         } catch (Exception e) {
             runContext.logger().error("Error checking for new videos", e);
             throw new RuntimeException("Failed to check for new videos: " + e.getMessage(), e);
         }
+    }
+
+    Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context, List<PlaylistItem> items) throws Exception {
+        RunContext runContext = conditionContext.getRunContext();
+
+        On rOn = runContext.render(this.on).as(On.class).orElse(On.CREATE);
+        Duration lookBack = this.interval.plus(PROCESSING_BUFFER);
+        String rStateKey = runContext.render(this.stateKey).as(String.class)
+            .orElse(defaultKey(context.getNamespace(), context.getFlowId(), this.getId()));
+        Duration minStateTtl = lookBack.multipliedBy(2);
+        Optional<Duration> rStateTtl = Optional.of(
+            runContext.render(this.stateTtl).as(Duration.class)
+                .orElse(DEFAULT_STATE_TTL.compareTo(minStateTtl) >= 0 ? DEFAULT_STATE_TTL : minStateTtl)
+        );
+
+        // Consecutive windows overlap, so the state is what keeps a video from firing twice;
+        // the window only stops the first poll from firing for the whole backlog.
+        Instant checkTime = Instant.now().minus(lookBack);
+
+        runContext.logger().info("Looking for videos published after: {}", checkTime);
+
+        Map<String, StatefulTriggerService.Entry> state = readState(runContext, rStateKey, rStateTtl);
+
+        List<VideoData> newVideos = new ArrayList<>();
+        for (PlaylistItem item : items) {
+            Instant publishedAt = Instant.ofEpochMilli(
+                item.getSnippet().getPublishedAt().getValue()
+            );
+
+            runContext.logger().debug(
+                "Video '{}' published at: {}",
+                item.getSnippet().getTitle(), publishedAt
+            );
+
+            if (!publishedAt.isAfter(checkTime)) {
+                continue;
+            }
+
+            VideoData videoData = createVideoData(item);
+            StatefulTriggerService.Entry candidate = StatefulTriggerService.Entry.candidate(
+                videoData.getVideoId(),
+                videoData.getTitle(),
+                publishedAt
+            );
+
+            if (computeAndUpdateState(state, candidate, rOn).fire()) {
+                newVideos.add(videoData);
+                runContext.logger().info("Found new video: {}", videoData.getTitle());
+            } else {
+                runContext.logger().debug("Video '{}' already emitted, skipping", videoData.getTitle());
+            }
+        }
+
+        writeState(runContext, rStateKey, state, rStateTtl);
+
+        if (newVideos.isEmpty()) {
+            runContext.logger().info("No new videos found since last check");
+            return Optional.empty();
+        }
+
+        VideoData latestVideo = newVideos.getFirst();
+
+        Output output = Output.builder()
+            .videoId(latestVideo.getVideoId())
+            .title(latestVideo.getTitle())
+            .description(latestVideo.getDescription())
+            .channelId(latestVideo.getChannelId())
+            .channelTitle(latestVideo.getChannelTitle())
+            .publishedAt(latestVideo.getPublishedAt())
+            .thumbnailUrl(latestVideo.getThumbnailUrl())
+            .videoUrl(latestVideo.getVideoUrl())
+            .newVideosCount(newVideos.size())
+            .allNewVideos(newVideos)
+            .build();
+
+        return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
     }
 
     private YouTube createYoutubeService(String renderedAccessToken, String renderedApplicationName) {
