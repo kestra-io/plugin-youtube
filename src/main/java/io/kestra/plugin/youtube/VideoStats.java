@@ -11,6 +11,7 @@ import com.google.api.services.youtube.model.VideoStatistics;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -19,7 +20,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -116,7 +116,8 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
             .setMaxResults(Long.valueOf(renderedMaxResults));
 
         VideoListResponse response = request.execute();
-        List<Video> videos = response.getItems();
+        // YouTube omits `items` entirely when none of the IDs match
+        List<Video> videos = response.getItems() == null ? List.of() : response.getItems();
 
         // Process the results
         List<VideoStatsData> results = new ArrayList<>();

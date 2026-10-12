@@ -18,7 +18,7 @@ class VideoTriggerEmptyResponseTest {
     private final VideoTrigger trigger = VideoTrigger.builder().build();
 
     private static YouTube youtube(String json) {
-        MockHttpTransport transport = new MockHttpTransport.Builder()
+        var transport = new MockHttpTransport.Builder()
             .setLowLevelHttpResponse(new MockLowLevelHttpResponse().setContentType(Json.MEDIA_TYPE).setContent(json))
             .build();
 
@@ -30,7 +30,7 @@ class VideoTriggerEmptyResponseTest {
     @Test
     void shouldReturnNoPlaylistWhenTheChannelDoesNotExist() throws Exception {
         // Actual channels.list response for an unknown channel ID: no `items` field at all
-        YouTube youtube = youtube("""
+        var youtube = youtube("""
             {"kind": "youtube#channelListResponse", "etag": "x", "pageInfo": {"totalResults": 0, "resultsPerPage": 5}}
             """);
 
@@ -38,8 +38,17 @@ class VideoTriggerEmptyResponseTest {
     }
 
     @Test
+    void shouldReturnNoPlaylistWhenTheChannelHasNoContentDetails() throws Exception {
+        var youtube = youtube("""
+            {"kind": "youtube#channelListResponse", "items": [{"kind": "youtube#channel", "id": "UC_test"}]}
+            """);
+
+        assertThat(trigger.getUploadsPlaylistId(youtube, "UC_test"), is(nullValue()));
+    }
+
+    @Test
     void shouldReturnTheUploadsPlaylistOfAnExistingChannel() throws Exception {
-        YouTube youtube = youtube("""
+        var youtube = youtube("""
             {"kind": "youtube#channelListResponse", "items": [
               {"kind": "youtube#channel", "id": "UC_test", "contentDetails": {"relatedPlaylists": {"uploads": "UU_test"}}}
             ]}
@@ -50,7 +59,7 @@ class VideoTriggerEmptyResponseTest {
 
     @Test
     void shouldReturnNoUploadsWhenThePlaylistIsEmpty() throws Exception {
-        YouTube youtube = youtube("""
+        var youtube = youtube("""
             {"kind": "youtube#playlistItemListResponse", "etag": "x", "pageInfo": {"totalResults": 0, "resultsPerPage": 5}}
             """);
 
@@ -59,7 +68,7 @@ class VideoTriggerEmptyResponseTest {
 
     @Test
     void shouldReturnTheUploadsOfAPlaylist() throws Exception {
-        YouTube youtube = youtube("""
+        var youtube = youtube("""
             {"kind": "youtube#playlistItemListResponse", "items": [
               {"kind": "youtube#playlistItem", "snippet": {"title": "Upload", "resourceId": {"kind": "youtube#video", "videoId": "abc"}}}
             ]}

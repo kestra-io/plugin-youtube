@@ -127,7 +127,10 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         try {
             String uploadsPlaylistId = getUploadsPlaylistId(youtube, renderedChannelId);
             if (uploadsPlaylistId == null) {
-                runContext.logger().warn("Could not find uploads playlist for channel: {}", renderedChannelId);
+                runContext.logger().warn(
+                    "No YouTube channel found for channelId '{}'. channelId must be the channel ID (starts with 'UC'), not a @handle or channel name",
+                    renderedChannelId
+                );
                 return Optional.empty();
             }
 
@@ -219,6 +222,10 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         }
 
         Channel channel = channelResponse.getItems().getFirst();
+        if (channel.getContentDetails() == null || channel.getContentDetails().getRelatedPlaylists() == null) {
+            return null;
+        }
+
         return channel.getContentDetails()
             .getRelatedPlaylists()
             .getUploads();
