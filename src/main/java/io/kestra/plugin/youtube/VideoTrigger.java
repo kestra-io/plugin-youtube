@@ -197,9 +197,9 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
         var state = readState(runContext, rStateKey, rStateTtl);
 
-        List<VideoData> newVideos = new ArrayList<>();
+        var newVideos = new ArrayList<VideoData>();
         for (PlaylistItem item : items) {
-            Instant publishedAt = Instant.ofEpochMilli(
+            var publishedAt = Instant.ofEpochMilli(
                 item.getSnippet().getPublishedAt().getValue()
             );
 
@@ -234,9 +234,9 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
             return Optional.empty();
         }
 
-        VideoData latestVideo = newVideos.getFirst();
+        var latestVideo = newVideos.getFirst();
 
-        Output output = Output.builder()
+        var output = Output.builder()
             .videoId(latestVideo.getVideoId())
             .title(latestVideo.getTitle())
             .description(latestVideo.getDescription())
