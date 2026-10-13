@@ -30,6 +30,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import static io.kestra.core.models.triggers.StatefulTriggerService.computeAndUpdateState;
+import static io.kestra.core.models.triggers.StatefulTriggerService.readState;
+import static io.kestra.core.models.triggers.StatefulTriggerService.writeState;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -37,7 +41,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Schema(
     title = "Trigger flow on new channel uploads",
-    description = "Polls a channel's uploads playlist on a fixed interval (default PT1H with a 5m buffer) and starts a Flow when new videos publish. Uses an OAuth2 access token and checks up to maxResults items (default 5, YouTube limit 50)."
+    description = "Polls a channel's uploads playlist on a fixed interval (default PT1H with a 5m buffer) and starts a Flow when new videos publish. Uses an OAuth2 access token and checks up to maxResults items (default 5, YouTube limit 50). Videos already emitted are remembered in the KV store, so a video fires once even though consecutive polls overlap."
 )
 @Plugin(
     examples = {
@@ -65,7 +69,10 @@ import lombok.experimental.SuperBuilder;
         )
     }
 )
-public class VideoTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<VideoTrigger.Output> {
+public class VideoTrigger extends AbstractTrigger implements PollingTriggerInterface, TriggerOutput<VideoTrigger.Output>, StatefulTriggerInterface {
+    // Extra look-back on each poll to account for delays in YouTube processing
+    private static final Duration PROCESSING_BUFFER = Duration.ofMinutes(5);
+    private static final Duration DEFAULT_STATE_TTL = Duration.ofDays(7);
 
     @Schema(
         title = "Access token",
@@ -108,6 +115,31 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
     @PluginProperty(group = "advanced")
     private Property<String> applicationName = Property.ofValue("kestra-yt-plugin");
 
+    @Schema(
+        title = "Trigger event type",
+        description = """
+            - `CREATE`: fires for videos the trigger has not emitted before.
+            - `UPDATE`: fires when a video it has already seen changes title while still inside the polling window.
+            - `CREATE_OR_UPDATE`: fires on either."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<On> on = Property.ofValue(On.CREATE);
+
+    @Schema(
+        title = "State key",
+        description = "KV key under which emitted videos are stored. Defaults to a key derived from the namespace, flow ID and trigger ID that is unique per trigger."
+    )
+    @PluginProperty(group = "advanced")
+    private Property<String> stateKey;
+
+    @Schema(
+        title = "State TTL",
+        description = "How long an emitted video is remembered, e.g. `P30D`. Defaults to 7 days. Values shorter than twice the look-back (`interval` plus 5 minutes) are raised to that minimum, so a video can't fire again while it is still inside the polling window."
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Duration> stateTtl;
+
     @Override
     public Duration getInterval() {
         return this.interval;
@@ -141,59 +173,106 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
                 return Optional.empty();
             }
 
-            Instant checkTime = Instant.now().minus(this.interval);
-
-            // Add a small buffer to account for delays in YouTube processing
-            checkTime = checkTime.minus(Duration.ofMinutes(5));
-
-            runContext.logger().info("Looking for videos published after: {}", checkTime);
-
-            List<VideoData> newVideos = new ArrayList<>();
-            for (PlaylistItem item : items) {
-                Instant publishedAt = Instant.ofEpochMilli(
-                    item.getSnippet().getPublishedAt().getValue()
-                );
-
-                runContext.logger().debug(
-                    "Video '{}' published at: {}",
-                    item.getSnippet().getTitle(), publishedAt
-                );
-
-                if (publishedAt.isAfter(checkTime)) {
-                    VideoData videoData = createVideoData(item);
-                    newVideos.add(videoData);
-                    runContext.logger().info("Found new video: {}", videoData.getTitle());
-                }
-            }
-
-            if (newVideos.isEmpty()) {
-                runContext.logger().info("No new videos found since last check");
-                return Optional.empty();
-            }
-
-            VideoData latestVideo = newVideos.getFirst();
-
-            Output output = Output.builder()
-                .videoId(latestVideo.getVideoId())
-                .title(latestVideo.getTitle())
-                .description(latestVideo.getDescription())
-                .channelId(latestVideo.getChannelId())
-                .channelTitle(latestVideo.getChannelTitle())
-                .publishedAt(latestVideo.getPublishedAt())
-                .thumbnailUrl(latestVideo.getThumbnailUrl())
-                .videoUrl(latestVideo.getVideoUrl())
-                .newVideosCount(newVideos.size())
-                .allNewVideos(newVideos)
-                .build();
-
-            Execution execution = TriggerService.generateExecution(this, conditionContext, context, output);
-
-            return Optional.of(execution);
+            return evaluate(conditionContext, context, items);
 
         } catch (Exception e) {
             runContext.logger().error("Error checking for new videos", e);
             throw new RuntimeException("Failed to check for new videos: " + e.getMessage(), e);
         }
+    }
+
+    Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context, List<PlaylistItem> items) throws Exception {
+        var runContext = conditionContext.getRunContext();
+
+        var rOn = runContext.render(this.on).as(On.class).orElse(On.CREATE);
+        var lookBack = this.interval.plus(PROCESSING_BUFFER);
+        var rStateKey = runContext.render(this.stateKey).as(String.class)
+            .orElse(defaultStateKey(context.getNamespace(), context.getFlowId(), this.getId()));
+        var rStateTtl = Optional.of(stateTtl(runContext, lookBack));
+
+        // State prevents re-firing on overlapping windows; the window only bounds the first poll.
+        var checkTime = Instant.now().minus(lookBack);
+
+        runContext.logger().info("Looking for videos published after: {}", checkTime);
+
+        var state = readState(runContext, rStateKey, rStateTtl);
+
+        var newVideos = new ArrayList<VideoData>();
+        for (PlaylistItem item : items) {
+            var publishedAt = Instant.ofEpochMilli(
+                item.getSnippet().getPublishedAt().getValue()
+            );
+
+            runContext.logger().debug(
+                "Video '{}' published at: {}",
+                item.getSnippet().getTitle(), publishedAt
+            );
+
+            if (!publishedAt.isAfter(checkTime)) {
+                continue;
+            }
+
+            var videoData = createVideoData(item);
+            var candidate = StatefulTriggerService.Entry.candidate(
+                videoData.getVideoId(),
+                videoData.getTitle(),
+                publishedAt
+            );
+
+            if (computeAndUpdateState(state, candidate, rOn).fire()) {
+                newVideos.add(videoData);
+                runContext.logger().info("Found new video: {}", videoData.getTitle());
+            } else {
+                runContext.logger().debug("Video '{}' already emitted, skipping", videoData.getTitle());
+            }
+        }
+
+        writeState(runContext, rStateKey, state, rStateTtl);
+
+        if (newVideos.isEmpty()) {
+            runContext.logger().info("No new videos found since last check");
+            return Optional.empty();
+        }
+
+        var latestVideo = newVideos.getFirst();
+
+        var output = Output.builder()
+            .videoId(latestVideo.getVideoId())
+            .title(latestVideo.getTitle())
+            .description(latestVideo.getDescription())
+            .channelId(latestVideo.getChannelId())
+            .channelTitle(latestVideo.getChannelTitle())
+            .publishedAt(latestVideo.getPublishedAt())
+            .thumbnailUrl(latestVideo.getThumbnailUrl())
+            .videoUrl(latestVideo.getVideoUrl())
+            .newVideosCount(newVideos.size())
+            .allNewVideos(newVideos)
+            .build();
+
+        return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
+    }
+
+    // Length prefixes keep e.g. flow `a_b`/trigger `c` and flow `a`/trigger `b_c` on separate keys
+    static String defaultStateKey(String namespace, String flowId, String triggerId) {
+        return "youtube_video_" + namespace.length() + "_" + namespace + "_" + flowId.length() + "_" + flowId + "_" + triggerId;
+    }
+
+    private Duration stateTtl(RunContext runContext, Duration lookBack) throws Exception {
+        var minStateTtl = lookBack.multipliedBy(2);
+        var rendered = runContext.render(this.stateTtl).as(Duration.class);
+        if (rendered.isEmpty()) {
+            return DEFAULT_STATE_TTL.compareTo(minStateTtl) >= 0 ? DEFAULT_STATE_TTL : minStateTtl;
+        }
+
+        if (rendered.get().compareTo(minStateTtl) < 0) {
+            runContext.logger().warn(
+                "stateTtl {} is shorter than twice the look-back (interval + {}), using {} so videos don't fire again",
+                rendered.get(), PROCESSING_BUFFER, minStateTtl
+            );
+            return minStateTtl;
+        }
+
+        return rendered.get();
     }
 
     private YouTube createYoutubeService(String renderedAccessToken, String renderedApplicationName) {
