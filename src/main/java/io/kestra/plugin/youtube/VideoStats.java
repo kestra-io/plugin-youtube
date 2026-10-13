@@ -11,6 +11,7 @@ import com.google.api.services.youtube.model.VideoStatistics;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -19,7 +20,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -110,13 +110,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
             parts.add("contentDetails");
         }
 
-        YouTube.Videos.List request = youTube.videos()
-            .list(Collections.singletonList(String.join(",", parts)))
-            .setId(Collections.singletonList(String.join(",", renderedVideoIds)))
-            .setMaxResults(Long.valueOf(renderedMaxResults));
-
-        VideoListResponse response = request.execute();
-        List<Video> videos = response.getItems();
+        List<Video> videos = getVideos(youTube, parts, renderedVideoIds, renderedMaxResults);
 
         // Process the results
         List<VideoStatsData> results = new ArrayList<>();
@@ -167,6 +161,18 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
             .totalLikes(totals.get("likes"))
             .totalComments(totals.get("comments"))
             .build();
+    }
+
+    List<Video> getVideos(YouTube youTube, List<String> parts, List<String> videoIds, Integer maxResults) throws Exception {
+        YouTube.Videos.List request = youTube.videos()
+            .list(Collections.singletonList(String.join(",", parts)))
+            .setId(Collections.singletonList(String.join(",", videoIds)))
+            .setMaxResults(Long.valueOf(maxResults));
+
+        VideoListResponse response = request.execute();
+
+        // YouTube omits `items` entirely when none of the IDs match
+        return response.getItems() == null ? List.of() : response.getItems();
     }
 
     private Map<String, BigInteger> calculateTotals(List<VideoStatsData> videos) {

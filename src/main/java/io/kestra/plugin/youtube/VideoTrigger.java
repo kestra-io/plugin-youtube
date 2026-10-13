@@ -18,6 +18,7 @@ import com.google.api.services.youtube.model.PlaylistItemListResponse;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -28,7 +29,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.PluginProperty;
 
 @SuperBuilder
 @ToString
@@ -127,18 +127,14 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
         try {
             String uploadsPlaylistId = getUploadsPlaylistId(youtube, renderedChannelId);
             if (uploadsPlaylistId == null) {
-                runContext.logger().warn("Could not find uploads playlist for channel: {}", renderedChannelId);
+                runContext.logger().warn(
+                    "No YouTube channel found for channelId '{}'. channelId must be the channel ID (starts with 'UC'), not a @handle or channel name",
+                    renderedChannelId
+                );
                 return Optional.empty();
             }
 
-            // Fetch playlist items
-            YouTube.PlaylistItems.List request = youtube.playlistItems()
-                .list(List.of("snippet"))
-                .setPlaylistId(uploadsPlaylistId)
-                .setMaxResults(Long.valueOf(renderedMaxResults));
-
-            PlaylistItemListResponse response = request.execute();
-            List<PlaylistItem> items = response.getItems();
+            List<PlaylistItem> items = getUploads(youtube, uploadsPlaylistId, renderedMaxResults);
 
             if (items.isEmpty()) {
                 runContext.logger().info("No videos found in uploads playlist");
@@ -196,7 +192,7 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
         } catch (Exception e) {
             runContext.logger().error("Error checking for new videos", e);
-            throw new RuntimeException("Failed to check for new videos" + e.getMessage(), e);
+            throw new RuntimeException("Failed to check for new videos: " + e.getMessage(), e);
         }
     }
 
@@ -213,21 +209,37 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
             .build();
     }
 
-    private String getUploadsPlaylistId(YouTube youTube, String channelId) throws Exception {
+    String getUploadsPlaylistId(YouTube youTube, String channelId) throws Exception {
         YouTube.Channels.List channelRequest = youTube.channels()
             .list(List.of("contentDetails"))
             .setId(List.of(channelId));
 
         ChannelListResponse channelResponse = channelRequest.execute();
 
-        if (channelResponse.getItems().isEmpty()) {
+        // YouTube omits `items` entirely when no channel matches
+        if (channelResponse.getItems() == null || channelResponse.getItems().isEmpty()) {
             return null;
         }
 
         Channel channel = channelResponse.getItems().getFirst();
+        if (channel.getContentDetails() == null || channel.getContentDetails().getRelatedPlaylists() == null) {
+            return null;
+        }
+
         return channel.getContentDetails()
             .getRelatedPlaylists()
             .getUploads();
+    }
+
+    List<PlaylistItem> getUploads(YouTube youTube, String uploadsPlaylistId, Integer maxResults) throws Exception {
+        YouTube.PlaylistItems.List request = youTube.playlistItems()
+            .list(List.of("snippet"))
+            .setPlaylistId(uploadsPlaylistId)
+            .setMaxResults(Long.valueOf(maxResults));
+
+        PlaylistItemListResponse response = request.execute();
+
+        return response.getItems() == null ? List.of() : response.getItems();
     }
 
     @Builder
