@@ -110,14 +110,7 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
             parts.add("contentDetails");
         }
 
-        YouTube.Videos.List request = youTube.videos()
-            .list(Collections.singletonList(String.join(",", parts)))
-            .setId(Collections.singletonList(String.join(",", renderedVideoIds)))
-            .setMaxResults(Long.valueOf(renderedMaxResults));
-
-        VideoListResponse response = request.execute();
-        // YouTube omits `items` entirely when none of the IDs match
-        List<Video> videos = response.getItems() == null ? List.of() : response.getItems();
+        List<Video> videos = getVideos(youTube, parts, renderedVideoIds, renderedMaxResults);
 
         // Process the results
         List<VideoStatsData> results = new ArrayList<>();
@@ -168,6 +161,18 @@ public class VideoStats extends AbstractYoutubeTask implements RunnableTask<Vide
             .totalLikes(totals.get("likes"))
             .totalComments(totals.get("comments"))
             .build();
+    }
+
+    List<Video> getVideos(YouTube youTube, List<String> parts, List<String> videoIds, Integer maxResults) throws Exception {
+        YouTube.Videos.List request = youTube.videos()
+            .list(Collections.singletonList(String.join(",", parts)))
+            .setId(Collections.singletonList(String.join(",", videoIds)))
+            .setMaxResults(Long.valueOf(maxResults));
+
+        VideoListResponse response = request.execute();
+
+        // YouTube omits `items` entirely when none of the IDs match
+        return response.getItems() == null ? List.of() : response.getItems();
     }
 
     private Map<String, BigInteger> calculateTotals(List<VideoStatsData> videos) {
