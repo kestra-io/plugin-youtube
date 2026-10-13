@@ -27,6 +27,7 @@ import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 @KestraTest
 class VideoTriggerTest {
@@ -97,6 +98,25 @@ class VideoTriggerTest {
         var context = TestsUtils.mockTrigger(runContextFactory, trigger);
 
         assertThat(evaluate(trigger, context, video("old", "Old", Instant.now().minus(Duration.ofHours(2)))).isEmpty(), is(true));
+    }
+
+    @Test
+    void shouldKeepAStateTtlShorterThanTheLookBackFromRefiring() throws Exception {
+        // Without the floor, PT0S expires every entry on the next read and the video fires again
+        var trigger = trigger().stateTtl(Property.ofValue(Duration.ZERO)).build();
+        var context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        var upload = video("abc", "Upload", Instant.now().minus(Duration.ofMinutes(2)));
+
+        assertThat(evaluate(trigger, context, upload).isPresent(), is(true));
+        assertThat(evaluate(trigger, context, upload).isEmpty(), is(true));
+    }
+
+    @Test
+    void shouldGiveFlowsWithUnderscoresDistinctDefaultStateKeys() {
+        assertThat(
+            VideoTrigger.defaultStateKey("company", "a_b", "c"),
+            is(not(VideoTrigger.defaultStateKey("company", "a", "b_c")))
+        );
     }
 
     @Test

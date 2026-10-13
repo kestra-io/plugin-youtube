@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import com.google.api.client.auth.oauth2.BearerToken;
@@ -32,7 +31,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.models.triggers.StatefulTriggerService.computeAndUpdateState;
-import static io.kestra.core.models.triggers.StatefulTriggerService.defaultKey;
 import static io.kestra.core.models.triggers.StatefulTriggerService.readState;
 import static io.kestra.core.models.triggers.StatefulTriggerService.writeState;
 
@@ -130,14 +128,14 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
 
     @Schema(
         title = "State key",
-        description = "KV key under which emitted videos are stored. Defaults to `<namespace>_<flowId>_<triggerId>`."
+        description = "KV key under which emitted videos are stored. Defaults to a key derived from the namespace, flow ID and trigger ID that is unique per trigger."
     )
     @PluginProperty(group = "advanced")
     private Property<String> stateKey;
 
     @Schema(
         title = "State TTL",
-        description = "How long an emitted video is remembered, e.g. `P30D`. Must be longer than `interval` plus 5 minutes, or a video can fire again. Defaults to 7 days, or twice that look-back if longer."
+        description = "How long an emitted video is remembered, e.g. `P30D`. Defaults to 7 days. Values shorter than twice the look-back (`interval` plus 5 minutes) are raised to that minimum, so a video can't fire again while it is still inside the polling window."
     )
     @PluginProperty(group = "advanced")
     private Property<Duration> stateTtl;
@@ -184,25 +182,20 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
     }
 
     Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context, List<PlaylistItem> items) throws Exception {
-        RunContext runContext = conditionContext.getRunContext();
+        var runContext = conditionContext.getRunContext();
 
-        On rOn = runContext.render(this.on).as(On.class).orElse(On.CREATE);
-        Duration lookBack = this.interval.plus(PROCESSING_BUFFER);
-        String rStateKey = runContext.render(this.stateKey).as(String.class)
-            .orElse(defaultKey(context.getNamespace(), context.getFlowId(), this.getId()));
-        Duration minStateTtl = lookBack.multipliedBy(2);
-        Optional<Duration> rStateTtl = Optional.of(
-            runContext.render(this.stateTtl).as(Duration.class)
-                .orElse(DEFAULT_STATE_TTL.compareTo(minStateTtl) >= 0 ? DEFAULT_STATE_TTL : minStateTtl)
-        );
+        var rOn = runContext.render(this.on).as(On.class).orElse(On.CREATE);
+        var lookBack = this.interval.plus(PROCESSING_BUFFER);
+        var rStateKey = runContext.render(this.stateKey).as(String.class)
+            .orElse(defaultStateKey(context.getNamespace(), context.getFlowId(), this.getId()));
+        var rStateTtl = Optional.of(stateTtl(runContext, lookBack));
 
-        // Consecutive windows overlap, so the state is what keeps a video from firing twice;
-        // the window only stops the first poll from firing for the whole backlog.
-        Instant checkTime = Instant.now().minus(lookBack);
+        // State prevents re-firing on overlapping windows; the window only bounds the first poll.
+        var checkTime = Instant.now().minus(lookBack);
 
         runContext.logger().info("Looking for videos published after: {}", checkTime);
 
-        Map<String, StatefulTriggerService.Entry> state = readState(runContext, rStateKey, rStateTtl);
+        var state = readState(runContext, rStateKey, rStateTtl);
 
         List<VideoData> newVideos = new ArrayList<>();
         for (PlaylistItem item : items) {
@@ -219,8 +212,8 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
                 continue;
             }
 
-            VideoData videoData = createVideoData(item);
-            StatefulTriggerService.Entry candidate = StatefulTriggerService.Entry.candidate(
+            var videoData = createVideoData(item);
+            var candidate = StatefulTriggerService.Entry.candidate(
                 videoData.getVideoId(),
                 videoData.getTitle(),
                 publishedAt
@@ -257,6 +250,29 @@ public class VideoTrigger extends AbstractTrigger implements PollingTriggerInter
             .build();
 
         return Optional.of(TriggerService.generateExecution(this, conditionContext, context, output));
+    }
+
+    // Length prefixes keep e.g. flow `a_b`/trigger `c` and flow `a`/trigger `b_c` on separate keys
+    static String defaultStateKey(String namespace, String flowId, String triggerId) {
+        return "youtube_video_" + namespace.length() + "_" + namespace + "_" + flowId.length() + "_" + flowId + "_" + triggerId;
+    }
+
+    private Duration stateTtl(RunContext runContext, Duration lookBack) throws Exception {
+        var minStateTtl = lookBack.multipliedBy(2);
+        var rendered = runContext.render(this.stateTtl).as(Duration.class);
+        if (rendered.isEmpty()) {
+            return DEFAULT_STATE_TTL.compareTo(minStateTtl) >= 0 ? DEFAULT_STATE_TTL : minStateTtl;
+        }
+
+        if (rendered.get().compareTo(minStateTtl) < 0) {
+            runContext.logger().warn(
+                "stateTtl {} is shorter than twice the look-back (interval + {}), using {} so videos don't fire again",
+                rendered.get(), PROCESSING_BUFFER, minStateTtl
+            );
+            return minStateTtl;
+        }
+
+        return rendered.get();
     }
 
     private YouTube createYoutubeService(String renderedAccessToken, String renderedApplicationName) {
