@@ -40,7 +40,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 
                 tasks:
                   - id: authenticate
-                    type: io.kestra.plugin.youtube.auth.OAuth2
+                    type: io.kestra.plugin.youtube.OAuth2
                     clientId: "{{ secret('YOUTUBE_CLIENT_ID') }}"
                     clientSecret: "{{ secret('YOUTUBE_CLIENT_SECRET') }}"
                     refreshToken: "{{ secret('YOUTUBE_REFRESH_TOKEN') }}"
