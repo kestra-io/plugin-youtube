@@ -41,13 +41,13 @@ import lombok.experimental.SuperBuilder;
 
                 tasks:
                   - id: authenticate
-                    type: io.kestra.plugin.youtube.auth.OAuth2
+                    type: io.kestra.plugin.youtube.OAuth2
                     clientId: "{{ secret('YOUTUBE_CLIENT_ID') }}"
                     clientSecret: "{{ secret('YOUTUBE_CLIENT_SECRET') }}"
                     refreshToken: "{{ secret('YOUTUBE_REFRESH_TOKEN') }}"
 
                   - id: get_stats
-                    type: io.kestra.plugin.youtube.task.VideoStats
+                    type: io.kestra.plugin.youtube.VideoStats
                     accessToken: "{{ outputs.authenticate.accessToken }}"
                     videoIds:
                       - "dQw4w9WgXcQ"
